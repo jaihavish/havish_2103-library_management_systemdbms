@@ -2,7 +2,7 @@
 """All the words that go into the report. Kept apart from the Word-building code."""
 
 TITLE = "Design and Implementation of a Database Management System for Library Circulation and Digital Resource Management"
-STUDENT_NAME = "Shreyash Singh"
+STUDENT_NAME = "Jai Havish Sannapareddy"
 STUDENT_EMAIL = "shreyash.singh.1432@gmail.com"
 PH = "[Enter {}]"          # yellow placeholders for facts only the student knows
 
