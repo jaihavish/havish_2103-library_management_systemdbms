@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Circulation & Digital Resource Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased h-screen flex overflow-hidden">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 shadow-xl select-none">
+        <!-- Logo / App Name -->
+        <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 text-lg">
+                <i class="fa-solid fa-book-open-reader"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white tracking-tight text-sm leading-tight">Library Core</h1>
+                <p class="text-xs text-slate-400">DBMS Circulation Sys</p>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scroll text-sm font-medium">
+            <button onclick="navigate('dashboard')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="dashboard">
+                <i class="fa-solid fa-gauge-high w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Dashboard</span>
+            </button>
+            <button onclick="navigate('catalogue')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="catalogue">
+                <i class="fa-solid fa-book w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Catalogue & Copies</span>
+            </button>
+            <button onclick="navigate('circulation')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="circulation">
+                <i class="fa-solid fa-repeat w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Circulation (Issue/Return)</span>
+            </button>
+            <button onclick="navigate('members')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="members">
+                <i class="fa-solid fa-users w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Members</span>
+            </button>
+            <button onclick="navigate('reservations')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="reservations">
+                <i class="fa-solid fa-bookmark w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Reservations Queue</span>
+            </button>
+            <button onclick="navigate('fines')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="fines">
+                <i class="fa-solid fa-receipt w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Fines Management</span>
+            </button>
+            <button onclick="navigate('digital')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="digital">
+                <i class="fa-solid fa-laptop-file w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Digital Resources</span>
+            </button>
+            <button onclick="navigate('reports')" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition group" data-tab="reports">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-slate-400 group-hover:text-indigo-400"></i>
+                <span>Reports & Analytics</span>
+            </button>
+        </nav>
+
+        <!-- Database Connection Footer -->
+        <div class="p-3 border-t border-slate-800 bg-slate-950/40">
+            <div id="dbStatusWidget" class="p-3 rounded-lg bg-slate-800/80 border border-slate-700/60 flex flex-col gap-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Database:</span>
+                    <span id="dbStatusBadge" class="px-2 py-0.5 rounded-full font-semibold text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Checking...
+                    </span>
+                </div>
+                <div id="dbDetailsText" class="text-[11px] text-slate-400 truncate">localhost:3306</div>
+                <button onclick="openModal('dbModal')" class="w-full text-xs py-1.5 px-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium transition flex items-center justify-center gap-1.5 shadow">
+                    <i class="fa-solid fa-database text-[10px]"></i>
+                    <span id="dbBtnText">Database Settings</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+
+        <!-- TOP BAR -->
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm shrink-0">
+            <div class="flex items-center gap-4">
+                <h2 id="pageTitle" class="text-xl font-bold text-slate-800 tracking-tight">Dashboard Overview</h2>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="openIssueModal()" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm shadow-brand-500/20 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Quick Issue</span>
+                </button>
+                <button onclick="openModal('returnModal')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-turn-down"></i>
+                    <span>Return Book</span>
+                </button>
+                <button onclick="openModal('addMemberModal')" class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-slate-500"></i>
+                    <span>New Member</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT WRAPPER -->
+        <main class="flex-1 overflow-y-auto p-6 custom-scroll">
+
+            <!-- ================= TAB 1: DASHBOARD ================= -->
+            <section id="tab-dashboard" class="tab-pane space-y-6">
+                <!-- Stat Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="statsGrid">
+                    <!-- Cards will be populated by JS -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse h-28"></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse h-28"></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse h-28"></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse h-28"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Overdue Books Alert Table -->
+                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                                <h3 class="font-bold text-slate-800 text-sm">Overdue Books (Action Required)</h3>
+                            </div>
+                            <span class="text-xs text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-100" id="overdueCountPill">0 overdue</span>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                        <th class="p-3">Accession</th>
+                                        <th class="p-3">Title</th>
+                                        <th class="p-3">Borrower</th>
+                                        <th class="p-3">Due Date</th>
+                                        <th class="p-3">Late (Days)</th>
+                                        <th class="p-3 text-right">Fine Accrued</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overdueTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                    <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading overdue records...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Quick Summary Chart -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col">
+                        <h3 class="font-bold text-slate-800 text-sm mb-3">Circulation Health</h3>
+                        <div class="flex-1 flex items-center justify-center min-h-[220px]">
+                            <canvas id="circulationChart"></canvas>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+                            <span>Policy enforcement: <strong class="text-slate-700">Active</strong></span>
+                            <span>Block limit: <strong class="text-rose-600">₹50 fine</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Active Loans Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm">Active Loans</h3>
+                        <button onclick="navigate('circulation')" class="text-xs text-brand-600 hover:text-brand-700 font-semibold">View All Loans &rarr;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">Accession</th>
+                                    <th class="p-3">Book Title</th>
+                                    <th class="p-3">Borrower Name</th>
+                                    <th class="p-3">Card No</th>
+                                    <th class="p-3">Issue Date</th>
+                                    <th class="p-3">Due Date</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentLoansBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading active loans...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: CATALOGUE ================= -->
+            <section id="tab-catalogue" class="tab-pane hidden space-y-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="catalogueSearchInput" oninput="debounceCatalogueSearch()" placeholder="Search title, author, category, ISBN..." 
+                               class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button onclick="openModal('addBookModal')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Book</span>
+                        </button>
+                        <button onclick="openModal('addCopyModal')" class="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Add Physical Copy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">Title & Authors</th>
+                                    <th class="p-3">Category</th>
+                                    <th class="p-3">ISBN</th>
+                                    <th class="p-3 text-center">Edition</th>
+                                    <th class="p-3 text-center">Shelf Availability</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catalogueTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading catalogue...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: CIRCULATION ================= -->
+            <section id="tab-circulation" class="tab-pane hidden space-y-6">
+                <!-- Two Action Cards (Issue & Return/Renew) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Quick Issue Box -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-sm">Issue Book to Member</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Validates borrow limit (Students 3, Faculty 6, Public 2) and checks fine block threshold (₹50).</p>
+                            
+                            <form id="issueForm" onsubmit="handleIssueSubmit(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Select Member</label>
+                                    <select id="issueMemberSelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                                        <option value="">Select an active member...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Select Available Copy</label>
+                                    <select id="issueCopySelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                                        <option value="">Select a copy on shelf...</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm mt-2">
+                                    Confirm & Issue Book
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Quick Return / Renew Box -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                                    <i class="fa-solid fa-arrow-turn-down"></i>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-sm">Return or Renew Book</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Computes late fine automatically based on member type policy if overdue.</p>
+                            
+                            <form id="returnForm" onsubmit="handleReturnSubmit(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Accession Number</label>
+                                    <input type="text" id="returnAccessionInput" required placeholder="e.g. ACC-CS-002" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500">
+                                </div>
+                                <div class="flex gap-2 pt-1">
+                                    <button type="submit" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                                        Process Return
+                                    </button>
+                                    <button type="button" onclick="handleRenewSubmit()" class="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs rounded-lg transition">
+                                        Renew Loan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Active Loans Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm">All Current Loans Out</h3>
+                        <span id="totalLoansCount" class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">0 out</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">Accession No</th>
+                                    <th class="p-3">Title</th>
+                                    <th class="p-3">Borrower</th>
+                                    <th class="p-3">Card No</th>
+                                    <th class="p-3">Issued On</th>
+                                    <th class="p-3">Due Date</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Quick Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allLoansBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="8" class="p-4 text-center text-slate-400">Loading loans...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: MEMBERS ================= -->
+            <section id="tab-members" class="tab-pane hidden space-y-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="memberSearchInput" oninput="debounceMemberSearch()" placeholder="Search member name, card no, email..." 
+                               class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <button onclick="openModal('addMemberModal')" class="w-full sm:w-auto px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Register New Member</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">Card No</th>
+                                    <th class="p-3">Full Name</th>
+                                    <th class="p-3">Contact (Email / Phone)</th>
+                                    <th class="p-3">Member Type</th>
+                                    <th class="p-3">Expiry Date</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">History</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading members...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: RESERVATIONS ================= -->
+            <section id="tab-reservations" class="tab-pane hidden space-y-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Waiting List & Hold Queue</h3>
+                        <p class="text-xs text-slate-500">When all copies are checked out, members enter the queue. Returns automatically allocate hold status.</p>
+                    </div>
+                    <button onclick="openModal('addReservationModal')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Place Reservation</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">ID</th>
+                                    <th class="p-3">Book Title</th>
+                                    <th class="p-3 text-center">Queue Position</th>
+                                    <th class="p-3">Member</th>
+                                    <th class="p-3">Reserved On</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reservationsTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading reservations...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 6: FINES ================= -->
+            <section id="tab-fines" class="tab-pane hidden space-y-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Fines & Penalties</h3>
+                        <p class="text-xs text-slate-500">Track unpaid balances and log fine payments.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-medium text-slate-600 flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="unpaidOnlyCheckbox" onchange="loadFines()" checked class="rounded text-brand-600 focus:ring-brand-500">
+                            <span>Unpaid Fines Only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                                    <th class="p-3">Fine #</th>
+                                    <th class="p-3">Member</th>
+                                    <th class="p-3">Card No</th>
+                                    <th class="p-3">Book Title</th>
+                                    <th class="p-3 text-center">Days Late</th>
+                                    <th class="p-3 text-right">Total (₹)</th>
+                                    <th class="p-3 text-right">Paid (₹)</th>
+                                    <th class="p-3 text-right">Balance Due</th>
+                                    <th class="p-3 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finesTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="9" class="p-4 text-center text-slate-400">Loading fines...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 7: DIGITAL RESOURCES ================= -->
+            <section id="tab-digital" class="tab-pane hidden space-y-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Digital Repository (E-Books, Journals & Video)</h3>
+                        <p class="text-xs text-slate-500">Electronic catalog assets and student access duration logging.</p>
+                    </div>
+                    <button onclick="openModal('digitalAccessModal')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Log Access Session</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="digitalResourcesGrid">
+                    <!-- Cards populated by JS -->
+                </div>
+            </section>
+
+            <!-- ================= TAB 8: REPORTS & ANALYTICS ================= -->
+            <section id="tab-reports" class="tab-pane hidden space-y-6">
+                <!-- Report Selector & Export Bar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <label class="text-xs font-semibold text-slate-600">Select Report:</label>
+                        <select id="reportSelector" onchange="loadReport()" class="text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 font-medium">
+                            <option value="overdue">Overdue Copies & Fines</option>
+                            <option value="popular">Popular Books (Top Circulated)</option>
+                            <option value="fines">Monthly Fine Collection</option>
+                            <option value="active_loans">Current Loans Out</option>
+                            <option value="digital">Digital Resource Usage</option>
+                            <option value="available">Available Titles On Shelf</option>
+                        </select>
+                    </div>
+                    <button onclick="exportCurrentReportCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+
+                <!-- Report Chart Container (if applicable) -->
+                <div id="reportChartCard" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hidden">
+                    <h4 id="reportChartTitle" class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Visualization</h4>
+                    <div class="h-64">
+                        <canvas id="reportChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Report Dynamic Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead id="reportTableHead">
+                                <!-- Dynamic -->
+                            </thead>
+                            <tbody id="reportTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td class="p-4 text-center text-slate-400">Loading report data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Database Connection Modal -->
+    <div id="dbModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-database text-brand-600 text-sm"></i>
+                    <h3 class="font-bold text-slate-800 text-sm">MySQL Database Configuration</h3>
+                </div>
+                <button onclick="closeModal('dbModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="dbConnectForm" onsubmit="handleConnectDb(event)" class="p-5 space-y-4">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Host</label>
+                        <input type="text" id="dbHostInput" value="localhost" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Port</label>
+                        <input type="number" id="dbPortInput" value="3306" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">User</label>
+                        <input type="text" id="dbUserInput" value="root" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Database</label>
+                        <input type="text" id="dbNameInput" value="library_db" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">MySQL Root Password</label>
+                    <input type="password" id="dbPasswordInput" placeholder="Enter password (if any)" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    <p class="text-[10px] text-slate-400 mt-1">If MySQL80 is running on your machine, enter your root password.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="autoInitCheckbox" checked class="rounded text-brand-600 focus:ring-brand-500">
+                    <label for="autoInitCheckbox" class="text-xs text-slate-600">Auto-initialize schema & sample data if missing</label>
+                </div>
+                <div class="pt-2 flex gap-2">
+                    <button type="submit" class="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                        Connect & Sync
+                    </button>
+                    <button type="button" onclick="handleReseed()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition" title="Reload sample data">
+                        Re-Seed Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Return Modal -->
+    <div id="returnModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Return Book Copy</h3>
+                <button onclick="closeModal('returnModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleQuickReturnSubmit(event)" class="p-5 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Accession Number</label>
+                    <input type="text" id="quickReturnAccession" required placeholder="e.g. ACC-CS-002" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                    Confirm Return
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Add New Book to Catalogue</h3>
+                <button onclick="closeModal('addBookModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleAddBookSubmit(event)" class="p-5 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Title *</label>
+                    <input type="text" id="bookTitleInput" required placeholder="e.g. Clean Architecture" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Category *</label>
+                        <select id="bookCategorySelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                            <!-- Populated -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">ISBN (13 digits) *</label>
+                        <input type="text" id="bookIsbnInput" required placeholder="9780134494166" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Author(s) * (comma-separated)</label>
+                    <input type="text" id="bookAuthorsInput" required placeholder="Robert C. Martin" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Publisher *</label>
+                        <input type="text" id="bookPublisherInput" required placeholder="Prentice Hall" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Edition No</label>
+                        <input type="number" id="bookEditionInput" value="1" min="1" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pub Year</label>
+                        <input type="number" id="bookYearInput" value="2022" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pages</label>
+                        <input type="number" id="bookPagesInput" placeholder="380" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm mt-3">
+                    Save Book & Edition
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Copy Modal -->
+    <div id="addCopyModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Add Physical Copy</h3>
+                <button onclick="closeModal('addCopyModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleAddCopySubmit(event)" class="p-5 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Target ISBN *</label>
+                    <input type="text" id="copyIsbnInput" required placeholder="13-digit ISBN" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Accession Number *</label>
+                    <input type="text" id="copyAccessionInput" required placeholder="e.g. ACC-CS-010" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Shelf Location</label>
+                    <input type="text" id="copyShelfInput" placeholder="e.g. CS-A1-05" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm mt-2">
+                    Add Physical Copy
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Member Modal -->
+    <div id="addMemberModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Register New Member</h3>
+                <button onclick="closeModal('addMemberModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleAddMemberSubmit(event)" class="p-5 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Card Number *</label>
+                        <input type="text" id="memberCardInput" required placeholder="LIB2025005" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Member Type *</label>
+                        <select id="memberTypeSelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                            <option value="STUDENT">Student (3 books, 14 days)</option>
+                            <option value="FACULTY">Faculty (6 books, 30 days)</option>
+                            <option value="PUBLIC">Public (2 books, 7 days)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Full Name *</label>
+                    <input type="text" id="memberNameInput" required placeholder="Name" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Email *</label>
+                    <input type="email" id="memberEmailInput" required placeholder="email@example.com" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Phone Number (10 digits)</label>
+                        <input type="text" id="memberPhoneInput" placeholder="9876543210" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Validity (Years)</label>
+                        <input type="number" id="memberYearsInput" value="1" min="1" max="5" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm mt-2">
+                    Create Membership
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Member History Drawer/Modal -->
+    <div id="memberHistoryModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm" id="historyMemberTitle">Member Borrowing History</h3>
+                    <p class="text-xs text-slate-400" id="historyMemberSub">Card No: -</p>
+                </div>
+                <button onclick="closeModal('memberHistoryModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 custom-scroll">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                            <th class="p-2.5">Title</th>
+                            <th class="p-2.5">Accession</th>
+                            <th class="p-2.5">Issue Date</th>
+                            <th class="p-2.5">Due Date</th>
+                            <th class="p-2.5">Return Date</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5 text-right">Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberHistoryBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pay Fine Modal -->
+    <div id="payFineModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Collect Fine Payment</h3>
+                <button onclick="closeModal('payFineModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handlePayFineSubmit(event)" class="p-5 space-y-3">
+                <input type="hidden" id="payFineId">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Member / Book</label>
+                    <div id="payFineInfo" class="text-xs p-2.5 rounded bg-slate-50 text-slate-700 border border-slate-100"></div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Amount to Pay (₹)</label>
+                    <input type="number" step="0.5" id="payFineAmount" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500 font-bold text-slate-800">
+                </div>
+                <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                    Record Payment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Place Reservation Modal -->
+    <div id="addReservationModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Place Hold Reservation</h3>
+                <button onclick="closeModal('addReservationModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleAddReservationSubmit(event)" class="p-5 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Member Card Number *</label>
+                    <input type="text" id="reserveCardInput" required placeholder="LIB2025001" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Edition (ISBN) *</label>
+                    <select id="reserveIsbnSelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                        <option value="">Select a title out on loan...</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                    Join Reservation Queue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Log Digital Access Modal -->
+    <div id="digitalAccessModal" class="modal fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-sm">Log Digital Access Session</h3>
+                <button onclick="closeModal('digitalAccessModal')" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleDigitalAccessSubmit(event)" class="p-5 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Member Card No *</label>
+                    <input type="text" id="digitalCardInput" required placeholder="LIB2025001" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Resource *</label>
+                    <select id="digitalResourceSelect" required class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                        <!-- Populated -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Session Duration (Minutes)</label>
+                    <input type="number" id="digitalMinutesInput" value="45" min="1" max="1440" class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-brand-500">
+                </div>
+                <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-lg transition shadow-sm">
+                    Log Access Record
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        // State
+        let currentTab = 'dashboard';
+        let categories = [];
+        let allBooks = [];
+        let allDigital = [];
+        let circChartInstance = null;
+        let reportChartInstance = null;
+        let searchDebounceTimer = null;
+
+        // Toast notification system
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white';
+            const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-semibold transform transition-all duration-300 opacity-0 translate-y-2 pointer-events-auto max-w-sm`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-sm"></i><span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('opacity-0', 'translate-y-2'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Navigation
+        function navigate(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-brand-600', 'text-white', 'font-semibold');
+                el.classList.add('text-slate-300');
+            });
+
+            const activePane = document.getElementById(`tab-${tabId}`);
+            if (activePane) activePane.classList.remove('hidden');
+
+            const activeBtn = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-600', 'text-white', 'font-semibold');
+                activeBtn.classList.remove('text-slate-300');
+            }
+
+            // Update title
+            const titles = {
+                dashboard: 'Dashboard Overview',
+                catalogue: 'Book Catalogue & Physical Copies',
+                circulation: 'Circulation Desk (Issue / Return / Renew)',
+                members: 'Member Registry & Borrowing Rights',
+                reservations: 'Hold Reservations Queue',
+                fines: 'Fines & Penalty Payments',
+                digital: 'Digital Repository & Access Logs',
+                reports: 'Reports & Circulation Analytics'
+            };
+            document.getElementById('pageTitle').textContent = titles[tabId] || 'Library System';
+
+            // Tab-specific loads
+            if (tabId === 'dashboard') loadDashboard();
+            else if (tabId === 'catalogue') loadCatalogue();
+            else if (tabId === 'circulation') loadCirculation();
+            else if (tabId === 'members') loadMembers();
+            else if (tabId === 'reservations') loadReservations();
+            else if (tabId === 'fines') loadFines();
+            else if (tabId === 'digital') loadDigital();
+            else if (tabId === 'reports') loadReport();
+        }
+
+        // Check & Update DB Status
+        async function checkDbStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                const badge = document.getElementById('dbStatusBadge');
+                const details = document.getElementById('dbDetailsText');
+                const btnText = document.getElementById('dbBtnText');
+
+                if (data.mode === 'mysql' && data.connected) {
+                    badge.className = 'px-2 py-0.5 rounded-full font-semibold text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                    badge.textContent = 'MySQL Live';
+                    details.textContent = `${data.user}@${data.host}:${data.port}/${data.database}`;
+                    btnText.textContent = 'Manage Connection';
+                } else {
+                    badge.className = 'px-2 py-0.5 rounded-full font-semibold text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                    badge.textContent = 'Demo Mode';
+                    details.textContent = 'MySQL root password needed';
+                    btnText.textContent = 'Connect MySQL';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // ================= TAB LOADERS =================
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch('/api/dashboard');
+                const data = await res.json();
+                
+                // Render Stat Cards
+                const grid = document.getElementById('statsGrid');
+                const statCards = [
+                    { title: 'Books on Loan', val: data.stats['Books on loan'] || 0, icon: 'fa-book-bookmark', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                    { title: 'Overdue Copies', val: data.stats['Overdue'] || 0, icon: 'fa-clock-rotate-left', color: 'text-rose-600', bg: 'bg-rose-50' },
+                    { title: 'Available on Shelf', val: data.stats['Copies on shelf'] || 0, icon: 'fa-circle-check', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { title: 'Unpaid Fines', val: `₹${parseFloat(data.stats['Unpaid fines (Rs)'] || 0).toFixed(0)}`, icon: 'fa-receipt', color: 'text-amber-600', bg: 'bg-amber-50' },
+                ];
+                grid.innerHTML = statCards.map(c => `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-medium text-slate-500 block mb-1">${c.title}</span>
+                            <span class="text-2xl font-black text-slate-800 tracking-tight">${c.val}</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl ${c.bg} ${c.color} flex items-center justify-center text-lg">
+                            <i class="fa-solid ${c.icon}"></i>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Overdue Table
+                const odBody = document.getElementById('overdueTableBody');
+                document.getElementById('overdueCountPill').textContent = `${data.overdue.length} overdue`;
+                if (!data.overdue.length) {
+                    odBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-emerald-600 font-medium"><i class="fa-solid fa-circle-check mr-2"></i>No copies currently overdue!</td></tr>`;
+                } else {
+                    odBody.innerHTML = data.overdue.map(o => `
+                        <tr class="hover:bg-rose-50/40 transition">
+                            <td class="p-3 font-semibold text-slate-800">${o.accession_no}</td>
+                            <td class="p-3 font-medium">${o.title}</td>
+                            <td class="p-3 text-slate-600">${o.full_name || o.member || '-'}</td>
+                            <td class="p-3 text-slate-500">${o.due_date}</td>
+                            <td class="p-3 font-bold text-rose-600">${o.days_overdue || o.days_late}d late</td>
+                            <td class="p-3 text-right font-bold text-rose-700">₹${parseFloat(o.fine_so_far || o.days_late * 2).toFixed(2)}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="quickReturn('${o.accession_no}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition">
+                                    Return
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Recent Loans
+                const rlBody = document.getElementById('recentLoansBody');
+                if (!data.recent_loans.length) {
+                    rlBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No active loans.</td></tr>`;
+                } else {
+                    rlBody.innerHTML = data.recent_loans.map(l => `
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-3 font-semibold text-slate-800">${l.accession_no}</td>
+                            <td class="p-3 font-medium">${l.title}</td>
+                            <td class="p-3">${l.member || l.full_name || '-'}</td>
+                            <td class="p-3 text-slate-500">${l.card_no}</td>
+                            <td class="p-3 text-slate-500">${l.issue_date}</td>
+                            <td class="p-3 font-medium ${l.days_late > 0 ? 'text-rose-600 font-bold' : 'text-slate-700'}">${l.due_date}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="quickReturn('${l.accession_no}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium mr-1">
+                                    Return
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Chart
+                renderCirculationChart(data.stats);
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderCirculationChart(stats) {
+            const ctx = document.getElementById('circulationChart');
+            if (!ctx) return;
+            if (circChartInstance) circChartInstance.destroy();
+
+            circChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Shelf', 'On Loan', 'Overdue'],
+                    datasets: [{
+                        data: [stats['Copies on shelf'] || 5, stats['Books on loan'] || 2, stats['Overdue'] || 1],
+                        backgroundColor: ['#10b981', '#6366f1', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    },
+                    cutout: '72%'
+                }
+            });
+        }
+
+        // ================= CATALOGUE =================
+
+        function debounceCatalogueSearch() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(loadCatalogue, 300);
+        }
+
+        async function loadCatalogue() {
+            const query = document.getElementById('catalogueSearchInput').value.trim();
+            const res = await fetch(`/api/catalogue?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            categories = data.categories || [];
+            allBooks = data.books || [];
+
+            // Populate category dropdown in modal
+            const catSelect = document.getElementById('bookCategorySelect');
+            if (catSelect && categories.length) {
+                catSelect.innerHTML = categories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join('');
+            }
+
+            const tbody = document.getElementById('catalogueTableBody');
+            if (!allBooks.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No books found matching your query.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allBooks.map(b => {
+                const availClass = b.available > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200';
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3">
+                            <span class="font-bold text-slate-800 block">${b.title}</span>
+                            <span class="text-[11px] text-slate-500">${b.authors}</span>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">${b.category}</span>
+                        </td>
+                        <td class="p-3 font-mono text-slate-600 text-[11px]">${b.isbn}</td>
+                        <td class="p-3 text-center text-slate-600 font-medium">Ed. ${b.edition_no}</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${availClass}">
+                                ${b.available} / ${b.copies} avail
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="prepareAddCopy('${b.isbn}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold transition">
+                                + Add Copy
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function prepareAddCopy(isbn) {
+            document.getElementById('copyIsbnInput').value = isbn;
+            openModal('addCopyModal');
+        }
+
+        // ================= CIRCULATION =================
+
+        async function loadCirculation() {
+            const res = await fetch('/api/circulation/choices');
+            const data = await res.json();
+
+            // Populate member dropdown
+            const mSelect = document.getElementById('issueMemberSelect');
+            mSelect.innerHTML = `<option value="">Select an active member...</option>` +
+                data.members.map(m => `<option value="${m.card_no}">${m.full_name} (${m.card_no}) [${m.member_type}]</option>`).join('');
+
+            // Populate copy dropdown
+            const cSelect = document.getElementById('issueCopySelect');
+            cSelect.innerHTML = `<option value="">Select a copy on shelf...</option>` +
+                data.copies.map(c => `<option value="${c.accession_no}">${c.accession_no} - ${c.title}</option>`).join('');
+
+            // Populate all loans table
+            const tbody = document.getElementById('allLoansBody');
+            document.getElementById('totalLoansCount').textContent = `${data.loans.length} out`;
+
+            if (!data.loans.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">No books currently on loan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.loans.map(l => {
+                const late = l.days_late > 0;
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-slate-800">${l.accession_no}</td>
+                        <td class="p-3 font-medium">${l.title}</td>
+                        <td class="p-3">${l.member || l.full_name || '-'}</td>
+                        <td class="p-3 font-mono text-slate-500">${l.card_no}</td>
+                        <td class="p-3 text-slate-500">${l.issue_date}</td>
+                        <td class="p-3 font-medium ${late ? 'text-rose-600 font-bold' : 'text-slate-700'}">${l.due_date}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${late ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">
+                                ${late ? `${l.days_late}d Overdue` : 'Active'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="quickReturn('${l.accession_no}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition mr-1">
+                                Return
+                            </button>
+                            <button onclick="quickRenew('${l.accession_no}')" class="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded text-[11px] font-medium transition">
+                                Renew
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function handleIssueSubmit(e) {
+            e.preventDefault();
+            const card_no = document.getElementById('issueMemberSelect').value;
+            const accession_no = document.getElementById('issueCopySelect').value;
+            try {
+                const res = await fetch('/api/circulation/issue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ card_no, accession_no })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    loadCirculation();
+                } else {
+                    showToast(data.error || 'Failed to issue book.', 'error');
+                }
+            } catch (err) {
+                showToast('Server error during issue.', 'error');
+            }
+        }
+
+        async function handleReturnSubmit(e) {
+            e.preventDefault();
+            const accession_no = document.getElementById('returnAccessionInput').value.trim();
+            quickReturn(accession_no);
+        }
+
+        async function quickReturn(acc) {
+            try {
+                const res = await fetch('/api/circulation/return', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accession_no: acc })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    closeModal('returnModal');
+                    if (currentTab === 'circulation') loadCirculation();
+                    if (currentTab === 'dashboard') loadDashboard();
+                } else {
+                    showToast(data.error || 'Return failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Server error during return.', 'error');
+            }
+        }
+
+        async function quickRenew(acc) {
+            try {
+                const res = await fetch('/api/circulation/renew', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accession_no: acc })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    loadCirculation();
+                } else {
+                    showToast(data.error || 'Renew failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Server error during renewal.', 'error');
+            }
+        }
+
+        // ================= MEMBERS =================
+
+        function debounceMemberSearch() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(loadMembers, 300);
+        }
+
+        async function loadMembers() {
+            const q = document.getElementById('memberSearchInput').value.trim();
+            const res = await fetch(`/api/members?q=${encodeURIComponent(q)}`);
+            const members = await res.json();
+
+            const tbody = document.getElementById('membersTableBody');
+            if (!members.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No members found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = members.map(m => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-mono font-semibold text-slate-800">${m.card_no}</td>
+                    <td class="p-3 font-semibold text-slate-800">${m.full_name}</td>
+                    <td class="p-3 text-slate-600">
+                        <div>${m.email}</div>
+                        <div class="text-[11px] text-slate-400">${m.phone || '-'}</div>
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${m.member_type === 'FACULTY' ? 'bg-purple-50 text-purple-700' : m.member_type === 'STUDENT' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700'}">
+                            ${m.member_type}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-600">${m.expiry_date}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${m.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                            ${m.status}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="viewMemberHistory('${m.card_no}', '${m.full_name}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i>History
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewMemberHistory(card_no, name) {
+            document.getElementById('historyMemberTitle').textContent = `Borrowing History - ${name}`;
+            document.getElementById('historyMemberSub').textContent = `Card Number: ${card_no}`;
+            openModal('memberHistoryModal');
+
+            const res = await fetch(`/api/members/${card_no}/history`);
+            const hist = await res.json();
+            const tbody = document.getElementById('memberHistoryBody');
+
+            if (!hist.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No borrowing records on file for this member.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = hist.map(h => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-2.5 font-medium text-slate-800">${h.title}</td>
+                    <td class="p-2.5 font-mono text-slate-500">${h.accession_no}</td>
+                    <td class="p-2.5 text-slate-500">${h.issue_date}</td>
+                    <td class="p-2.5 text-slate-500">${h.due_date}</td>
+                    <td class="p-2.5 text-slate-500">${h.return_date || '<span class="text-indigo-600 font-semibold">Active Loan</span>'}</td>
+                    <td class="p-2.5">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${h.loan_status === 'OVERDUE' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'}">
+                            ${h.loan_status || 'RETURNED'}
+                        </span>
+                    </td>
+                    <td class="p-2.5 text-right font-medium text-slate-700">₹${parseFloat(h.fine_amount || 0).toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ================= RESERVATIONS =================
+
+        async function loadReservations() {
+            const res = await fetch('/api/reservations');
+            const data = await res.json();
+
+            // Populate reservable dropdown in modal
+            const isbnSelect = document.getElementById('reserveIsbnSelect');
+            if (data.reservable && data.reservable.length) {
+                isbnSelect.innerHTML = `<option value="">Select title...</option>` +
+                    data.reservable.map(r => `<option value="${r.isbn}">${r.title} (Ed ${r.edition_no})</option>`).join('');
+            }
+
+            const tbody = document.getElementById('reservationsTableBody');
+            if (!data.reservations.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No active reservations in the queue.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.reservations.map(r => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-mono text-slate-500">#${r.reservation_id}</td>
+                    <td class="p-3 font-semibold text-slate-800">${r.title}</td>
+                    <td class="p-3 text-center">
+                        <span class="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-bold inline-flex items-center justify-center text-[11px]">
+                            ${r.position_in_line || r.queue_no}
+                        </span>
+                    </td>
+                    <td class="p-3">${r.full_name}</td>
+                    <td class="p-3 text-slate-500">${r.reserved_on}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${r.status === 'READY' ? 'bg-emerald-50 text-emerald-700 font-bold' : 'bg-amber-50 text-amber-700'}">
+                            ${r.status}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="cancelReservation(${r.reservation_id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-medium transition">
+                            Cancel
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function cancelReservation(id) {
+            if (!confirm('Cancel this reservation?')) return;
+            const res = await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                loadReservations();
+            } else {
+                showToast(data.error || 'Failed to cancel.', 'error');
+            }
+        }
+
+        // ================= FINES =================
+
+        async function loadFines() {
+            const unpaidOnly = document.getElementById('unpaidOnlyCheckbox').checked ? '1' : '0';
+            const res = await fetch(`/api/fines?unpaid_only=${unpaidOnly}`);
+            const fines = await res.json();
+
+            const tbody = document.getElementById('finesTableBody');
+            if (!fines.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">No fines found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = fines.map(f => {
+                const unpaid = f.balance > 0;
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-mono text-slate-500">#${f.fine_id}</td>
+                        <td class="p-3 font-semibold text-slate-800">${f.member}</td>
+                        <td class="p-3 font-mono text-slate-500 text-[11px]">${f.card_no}</td>
+                        <td class="p-3">${f.title}</td>
+                        <td class="p-3 text-center text-slate-600 font-medium">${f.days_late}d</td>
+                        <td class="p-3 text-right font-medium text-slate-700">₹${parseFloat(f.amount).toFixed(2)}</td>
+                        <td class="p-3 text-right font-medium text-emerald-600">₹${parseFloat(f.paid_amount).toFixed(2)}</td>
+                        <td class="p-3 text-right font-bold ${unpaid ? 'text-rose-600' : 'text-slate-400'}">
+                            ₹${parseFloat(f.balance).toFixed(2)}
+                        </td>
+                        <td class="p-3 text-center">
+                            ${unpaid ? `
+                                <button onclick="preparePayFine(${f.fine_id}, '${f.member}', '${f.title}', ${f.balance})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition">
+                                    Collect
+                                </button>
+                            ` : `<span class="text-emerald-600 text-[11px] font-semibold"><i class="fa-solid fa-check mr-1"></i>Paid</span>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function preparePayFine(id, member, book, bal) {
+            document.getElementById('payFineId').value = id;
+            document.getElementById('payFineInfo').innerHTML = `<strong>${member}</strong> &mdash; ${book}<br><span class="text-rose-600 font-bold">Balance: ₹${bal.toFixed(2)}</span>`;
+            document.getElementById('payFineAmount').value = bal;
+            document.getElementById('payFineAmount').max = bal;
+            openModal('payFineModal');
+        }
+
+        async function handlePayFineSubmit(e) {
+            e.preventDefault();
+            const fine_id = document.getElementById('payFineId').value;
+            const amount = document.getElementById('payFineAmount').value;
+            try {
+                const res = await fetch('/api/fines/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fine_id, amount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message);
+                    closeModal('payFineModal');
+                    loadFines();
+                } else {
+                    showToast(data.error || 'Payment failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Error recording fine payment.', 'error');
+            }
+        }
+
+        // ================= DIGITAL RESOURCES =================
+
+        async function loadDigital() {
+            const res = await fetch('/api/digital');
+            allDigital = await res.json();
+
+            // Populate digital access modal dropdown
+            const dSelect = document.getElementById('digitalResourceSelect');
+            dSelect.innerHTML = allDigital.map(d => `<option value="${d.resource_id}">${d.title} (${d.resource_type})</option>`).join('');
+
+            const grid = document.getElementById('digitalResourcesGrid');
+            grid.innerHTML = allDigital.map(d => {
+                const icons = {
+                    JOURNAL: 'fa-newspaper text-purple-600 bg-purple-50',
+                    EBOOK: 'fa-book-open text-indigo-600 bg-indigo-50',
+                    VIDEO: 'fa-play text-rose-600 bg-rose-50'
+                };
+                const iconStyle = icons[d.resource_type] || 'fa-globe text-brand-600 bg-brand-50';
+
+                return `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">${d.resource_type}</span>
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center ${iconStyle.split(' ')[1]} ${iconStyle.split(' ')[0]}">
+                                    <i class="fa-solid ${iconStyle.split(' ')[0]}"></i>
+                                </div>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">${d.title}</h4>
+                            <p class="text-xs text-slate-400 truncate mb-3"><a href="${d.url}" target="_blank" class="hover:underline text-brand-600">${d.url}</a></p>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-[11px] text-slate-500">${d.licence_end ? `Licence: ${d.licence_end}` : 'Open Access'}</span>
+                            <button onclick="logResourceAccess(${d.resource_id})" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[11px] font-semibold transition">
+                                Log Visit
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function logResourceAccess(id) {
+            document.getElementById('digitalResourceSelect').value = id;
+            openModal('digitalAccessModal');
+        }
+
+        // ================= REPORTS =================
+
+        async function loadReport() {
+            const key = document.getElementById('reportSelector').value;
+            const res = await fetch(`/api/reports/${key}`);
+            const data = await res.json();
+            const rows = data.data || [];
+
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+
+            if (!rows.length) {
+                thead.innerHTML = '';
+                tbody.innerHTML = `<tr><td class="p-6 text-center text-slate-400">No records found for this report.</td></tr>`;
+                return;
+            }
+
+            const keys = Object.keys(rows[0]);
+            thead.innerHTML = `
+                <tr class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
+                    ${keys.map(k => `<th class="p-3">${k.replace(/_/g, ' ')}</th>`).join('')}
+                </tr>
+            `;
+
+            tbody.innerHTML = rows.map(r => `
+                <tr class="hover:bg-slate-50 transition">
+                    ${keys.map(k => `<td class="p-3 font-medium">${r[k] !== null && r[k] !== undefined ? r[k] : '-'}</td>`).join('')}
+                </tr>
+            `).join('');
+
+            // Optional chart visualization for Popular or Fines
+            const chartCard = document.getElementById('reportChartCard');
+            if (key === 'popular' || key === 'fines') {
+                chartCard.classList.remove('hidden');
+                renderReportChart(key, rows);
+            } else {
+                chartCard.classList.add('hidden');
+            }
+        }
+
+        function renderReportChart(key, rows) {
+            const ctx = document.getElementById('reportChart');
+            if (!ctx) return;
+            if (reportChartInstance) reportChartInstance.destroy();
+
+            if (key === 'popular') {
+                document.getElementById('reportChartTitle').textContent = 'Most Popular Titles (Circulation Count)';
+                reportChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: rows.map(r => r.title.length > 25 ? r.title.substring(0, 25) + '...' : r.title),
+                        datasets: [{
+                            label: 'Times Issued',
+                            data: rows.map(r => r.times_issued),
+                            backgroundColor: '#6366f1',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                    }
+                });
+            } else if (key === 'fines') {
+                document.getElementById('reportChartTitle').textContent = 'Monthly Fine Inflow vs Unpaid (₹)';
+                reportChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: rows.map(r => r.month),
+                        datasets: [
+                            { label: 'Total Assessed (₹)', data: rows.map(r => r.total_fined), borderColor: '#f43f5e', tension: 0.2 },
+                            { label: 'Collected (₹)', data: rows.map(r => r.total_collected), borderColor: '#10b981', tension: 0.2 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                    }
+                });
+            }
+        }
+
+        function exportCurrentReportCSV() {
+            const key = document.getElementById('reportSelector').value;
+            window.location.href = `/api/reports/${key}?csv=1`;
+        }
+
+        // ================= FORM HANDLERS =================
+
+        async function handleAddBookSubmit(e) {
+            e.preventDefault();
+            const body = {
+                title: document.getElementById('bookTitleInput').value,
+                category_id: document.getElementById('bookCategorySelect').value,
+                isbn: document.getElementById('bookIsbnInput').value,
+                authors: document.getElementById('bookAuthorsInput').value,
+                publisher: document.getElementById('bookPublisherInput').value,
+                edition_no: document.getElementById('bookEditionInput').value,
+                pub_year: document.getElementById('bookYearInput').value,
+                pages: document.getElementById('bookPagesInput').value
+            };
+            const res = await fetch('/api/catalogue/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('addBookModal');
+                loadCatalogue();
+            } else {
+                showToast(data.error || 'Failed to add book.', 'error');
+            }
+        }
+
+        async function handleAddCopySubmit(e) {
+            e.preventDefault();
+            const body = {
+                isbn: document.getElementById('copyIsbnInput').value,
+                accession_no: document.getElementById('copyAccessionInput').value,
+                shelf: document.getElementById('copyShelfInput').value
+            };
+            const res = await fetch('/api/catalogue/copy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('addCopyModal');
+                loadCatalogue();
+            } else {
+                showToast(data.error || 'Failed to add copy.', 'error');
+            }
+        }
+
+        async function handleAddMemberSubmit(e) {
+            e.preventDefault();
+            const body = {
+                card_no: document.getElementById('memberCardInput').value,
+                name: document.getElementById('memberNameInput').value,
+                email: document.getElementById('memberEmailInput').value,
+                phone: document.getElementById('memberPhoneInput').value,
+                member_type: document.getElementById('memberTypeSelect').value,
+                years: document.getElementById('memberYearsInput').value
+            };
+            const res = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('addMemberModal');
+                if (currentTab === 'members') loadMembers();
+            } else {
+                showToast(data.error || 'Failed to register member.', 'error');
+            }
+        }
+
+        async function handleAddReservationSubmit(e) {
+            e.preventDefault();
+            const body = {
+                card_no: document.getElementById('reserveCardInput').value,
+                isbn: document.getElementById('reserveIsbnSelect').value
+            };
+            const res = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('addReservationModal');
+                loadReservations();
+            } else {
+                showToast(data.error || 'Reservation failed.', 'error');
+            }
+        }
+
+        async function handleDigitalAccessSubmit(e) {
+            e.preventDefault();
+            const body = {
+                card_no: document.getElementById('digitalCardInput').value,
+                resource_id: document.getElementById('digitalResourceSelect').value,
+                minutes: document.getElementById('digitalMinutesInput').value
+            };
+            const res = await fetch('/api/digital/access', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('digitalAccessModal');
+            } else {
+                showToast(data.error || 'Log failed.', 'error');
+            }
+        }
+
+        async function handleConnectDb(e) {
+            e.preventDefault();
+            const body = {
+                host: document.getElementById('dbHostInput').value,
+                port: document.getElementById('dbPortInput').value,
+                user: document.getElementById('dbUserInput').value,
+                database: document.getElementById('dbNameInput').value,
+                password: document.getElementById('dbPasswordInput').value,
+                init_sample_data: document.getElementById('autoInitCheckbox').checked
+            };
+            showToast('Connecting to MySQL...', 'info');
+            const res = await fetch('/api/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('dbModal');
+                checkDbStatus();
+                navigate(currentTab);
+            } else {
+                showToast(data.error || 'MySQL connection failed.', 'error');
+            }
+        }
+
+        async function handleReseed() {
+            if (!confirm('Re-run SQL scripts and re-seed sample data?')) return;
+            const res = await fetch('/api/reseed', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                closeModal('dbModal');
+                navigate(currentTab);
+            } else {
+                showToast(data.error || 'Re-seed failed.', 'error');
+            }
+        }
+
+        function openIssueModal() {
+            navigate('circulation');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkDbStatus();
+            navigate('dashboard');
+        });
+    </script>
+</body>
+</html>
