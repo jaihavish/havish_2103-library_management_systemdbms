@@ -8,7 +8,7 @@
 The **Library Circulation and Digital Resource Management System** is a full-featured relational database management application designed to replace paper registers and uncoordinated spreadsheets in academic and public libraries. 
 
 Built with **MySQL 8.0** and **Python 3**, the system ensures strict relational integrity, ACID-compliant transactions, automated overdue fine computations, multi-tier borrowing policies, hold reservations, and electronic resource tracking. It provides two operational front ends:
-1. **Modern Web Interface** (`http://localhost:5000`) powered by Flask, Tailwind CSS, and Chart.js.
+1. **Modern Web Interface** (`http://localhost:5000/`) powered by Flask, Tailwind CSS, and Chart.js.
 2. **Native Desktop GUI** powered by Python Tkinter.
 
 ---
@@ -150,7 +150,7 @@ Stored inside the `member_policy` table so library administrators can modify pol
 ## 🖥️ Application Features & Modules
 
 ### 1. Web Application (`web_app.py`)
-Accessible via any browser at `http://localhost:5000`:
+Accessible via any browser at `http://localhost:5000/`:
 * **Dashboard Overview**: Live KPI metric tiles (Active Loans, Overdue Books, Copies on Shelf, Pending Fines), an interactive Chart.js donut chart, and an overdue book action board.
 * **Catalogue & Inventory**: Instant search across titles, authors, and ISBNs; filter by category; view real-time shelf availability ratios; modals to add new books or register new physical copy accession numbers.
 * **Circulation Desk**:
@@ -196,7 +196,7 @@ python web_app.py
 ```
 
 Then open your browser and go to:
-👉 **[http://localhost:5000](http://localhost:5000)**
+👉 **[http://localhost:5000](http://localhost:5000/)**
 
 ---
 
